@@ -39,8 +39,8 @@ plt_model = False     # plot model description picture
 save_predict = True   # save latent space output (with label)
 use_callback = False  # employ Earlystopping and Checkpoint during training
 
-l1_dim = 50           # encoder latent layer dimension
-l2_dim = 50           # decoder latent layer dimension
+l1_dim = 50           # encoder hidden layer dimension
+l2_dim = 50           # decoder hidden layer dimension
 vae_mean = 0.0        # VAE sampling normal distribution mean
 vae_std = 0.3         # VAE sampling normal distribution std deviation
 latent_dim = 3        # latent space dimension
@@ -267,7 +267,7 @@ if not use_pretrain:
 # In[14]:
 
 
-def plt_scatter (encoded_imgs, label, azim, elev, title="latent_space", save=True):
+def plt_scatter (encoded_imgs, label, azim, elev, title="latent_space", save=False):
     ticks = np.arange(0,25)
     fig = plt.figure(figsize=(9,6))
     ax = fig.add_subplot(111, projection='3d')
@@ -327,7 +327,7 @@ plt_scatter(train_img,train_label, azim=48, elev=20, title="train_latent_space")
 # In[17]:
 
 
-def plot_confusion_matrix(y_true, y_pred, classes, normalize=True, title=None, cmap=plt.cm.Blues):
+def plot_confusion_matrix(y_true, y_pred, classes, normalize=True, title=None, cmap=plt.cm.Blues, save=False):
     if not title:
         if normalize:
             title = 'Normalized confusion matrix'
@@ -397,7 +397,8 @@ def plot_confusion_matrix(y_true, y_pred, classes, normalize=True, title=None, c
                     ha="center", va="center",
                     color="white" if cm[i, j] > thresh else "black")
     fig.tight_layout()
-    fig.savefig(title)
+    if save:
+        fig.savefig(title)
     return ax
 
 
@@ -486,4 +487,120 @@ plot_confusion_matrix(test_label, pred, device_list, title="Unsupervised Classif
 
 
 plot_confusion_matrix(test_label, pred, device_list, title="Unsupervised Classification System Confusion Matrix (unNorm)", cmap=plt.cm.OrRd, normalize=False)
+
+
+# In[23]:
+
+
+# Demo of model with acc 86.7%
+print("Reading best test data...", end='')
+test_img = np.loadtxt(iot_data_dir + "test_predict_acc86.csv", delimiter=",")
+test_label = test_img[:,0]
+test_img = test_img[:,1:]
+print(" Success.")
+
+print("Reading best train data...", end='')
+train_img = np.loadtxt(iot_data_dir + "train_predict_acc86.csv", delimiter=",")
+train_label = train_img[:,0]
+train_img = train_img[:,1:]
+print(" Success.")
+
+
+# In[24]:
+
+
+plt_scatter(test_img,test_label, azim=48, elev=20, title="best_test_latent_space", save=True)
+
+
+# In[25]:
+
+
+plt_scatter(train_img,train_label, azim=48, elev=20, title="best_train_latent_space", save=True)
+
+
+# In[26]:
+
+
+# K-Means Model
+print("Training K-Means model for best latent space...",end='')
+model = KMeans(n_clusters=25, max_iter=512, n_init=128, n_jobs=16, random_state=0).fit(train_img)
+print("Done.")
+
+model_label = model.labels_
+label_map = np.zeros((25,))
+
+match_cnt = np.zeros((25,25))
+for i in range(0, train_label.shape[0]):
+    match_cnt[int(train_label[i])][model_label[i]] += 1
+
+label_map = match_cnt.argmax(axis=0)
+print("Label map:")
+print(label_map)
+del match_cnt
+
+
+# In[27]:
+
+
+# Comparison of true label with k-means label
+ticks = np.arange(0,25)
+fig = plt.figure(figsize=(20,7))
+
+ax1 = fig.add_subplot(121, projection='3d')
+ax1.view_init(azim=48,elev=20)
+ax1.set_title("True Label",fontsize=20)
+p1 = ax1.scatter(train_img[:, 0], train_img[:, 1], train_img[:, 2],
+               c=train_label, cmap=plt.cm.get_cmap('jet', 25))
+# fig.colorbar(p1, ticks=ticks,fraction=0.046, pad=0.04, aspect=20)
+
+ax2 = fig.add_subplot(122, projection='3d')
+ax2.view_init(azim=48,elev=20)
+ax2.set_title("K-Means Label",fontsize=20)
+p2 = ax2.scatter(train_img[:, 0], train_img[:, 1], train_img[:, 2],
+               c=model_label, cmap=plt.cm.get_cmap('jet', 25))
+# fig.colorbar(p2, ticks=ticks,fraction=0.046, pad=0.04, aspect=20)
+
+plt.show()
+
+del ticks
+del ax1
+del p1
+del ax2
+del p2
+
+
+# In[28]:
+
+
+# Best Total Accuracy Calculation
+pred = model.predict(test_img)
+
+acc = 0
+acc_cls = np.zeros((25,2))
+for i in range(0, test_label.shape[0]):
+    pred[i] = label_map[pred[i]]
+    acc_cls[int(test_label[i])][0] += 1
+    if test_label[i] == pred[i]:
+        acc += 1
+        acc_cls[int(test_label[i])][1] += 1
+acc = acc / test_label.shape[0]
+print("Best total acc: %.3f"%(acc*100) + " %")
+
+
+# In[29]:
+
+
+plot_confusion_matrix(test_label, pred, device_list, title="Unsupervised Classification System Confusion Matrix", cmap=plt.cm.OrRd, save=True)
+
+
+# In[30]:
+
+
+plot_confusion_matrix(test_label, pred, device_list, title="Unsupervised Classification System Confusion Matrix (unNorm)", cmap=plt.cm.OrRd, normalize=False, save=True)
+
+
+# In[ ]:
+
+
+
 

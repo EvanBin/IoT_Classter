@@ -3,7 +3,7 @@ echo "Building data analysis tool..."
 
 # Preprocess Step 1: build spatial features
 # goto data analysis tool directory
-cd ./step3_data_analysis
+cd ./data_analysis
 
 # build thee analysis tool
 make
@@ -20,8 +20,9 @@ make
 make remove
 
 # Preprocess Step 2: build temporal features
+echo ""
 echo "First step of encoded Instance done."
-echo "Building sequential features..."
+echo "Building temporal features..."
 
 # goto temporal calculation tool directory
 cd ..
@@ -29,6 +30,6 @@ cd ..
 # need to have python 3, if use python 2 change command to "python"
 # require Numpy and Pandas
 # if the data path is changed, modify step3_VAE_preprocess.py
-python3 ./step3_VAE_preprocess.py
+python3 ./VAE_preprocess.py
 
 echo "Preprocessing done."

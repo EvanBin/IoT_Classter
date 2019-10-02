@@ -239,6 +239,7 @@ int main(int argc, const char * argv[]) {
     tmp.clear();
 
     print_banner();
+    vector<string> data_files;
 
     if(!all_flag) {
         cout<<"Mode: IoT Packet\n";
@@ -262,23 +263,21 @@ int main(int argc, const char * argv[]) {
     }
     else {
         cout<<"Mode: All Packet\n";
-    }
-
-    vector<string> data_files=getFilenames(DATADIR,"csv");
-    for(int i=0;i<data_files.size();++i) {
-        if(data_files[i]==IOTLISTDIR) {
-            cout<<"WARNING: This process will create a blank Device List to the output directory. "
-            <<"We found you already have "<<IOTLISTDIR<<" there, the file will be overwrited to blank. "
-            <<"Please confirm to go on the process y/[n]: ";
-            char input;
-            cin>>input;
-            if(input!='y') {
-                cout<<"User abort.\n";
-                exit(0);
+        data_files = getFilenames(DATADIR,"csv");
+        for(int i=0;i<data_files.size();++i) {
+            if(data_files[i]==IOTLISTDIR) {
+                cout<<"WARNING: This process will create a blank Device List to the output directory. "
+                <<"We found you already have "<<IOTLISTDIR<<" there, the file will be overwrited to blank. "
+                <<"Please confirm to go on the process y/[n]: ";
+                char input;
+                cin>>input;
+                if(input!='y') {
+                    cout<<"User abort.\n";
+                    exit(0);
+                }
             }
         }
     }
-
 
     data_files=getFilenames(DATADIR,"pcap");
     for(int i=0;i<data_files.size();++i) {
